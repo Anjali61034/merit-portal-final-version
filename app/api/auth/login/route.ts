@@ -1,5 +1,4 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { userStorage } from "@/lib/storage"
 
 // ✅ Ensure a shared in-memory user store (works across routes in dev & prod)
 if (!(global as any).userStorage) {
@@ -26,7 +25,6 @@ if (!(global as any).userStorage) {
   ]
 }
 
-export const userStorage: any[] = (global as any).userStorage
 
 export async function POST(request: NextRequest) {
   try {
