@@ -1,8 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { userStorage } from "@/lib/storage"
 
-// Mock user database - replace with real database
-const mockUsers = {
-  student: [
+// ✅ Ensure a shared in-memory user store (works across routes in dev & prod)
+if (!(global as any).userStorage) {
+  ;(global as any).userStorage = [
+    // Optional default users
     {
       id: "1",
       email: "student@college.com",
@@ -13,8 +15,6 @@ const mockUsers = {
       year: "3",
       role: "student",
     },
-  ],
-  teacher: [
     {
       id: "T1",
       email: "teacher@college.com",
@@ -23,20 +23,24 @@ const mockUsers = {
       department: "Physics",
       role: "teacher",
     },
-  ],
+  ]
 }
+
+export const userStorage: any[] = (global as any).userStorage
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password, role } = await request.json()
 
-    const userList = mockUsers[role as keyof typeof mockUsers] || []
+    // ✅ Find user in shared storage
+    const userList = userStorage.filter((u) => u.role === role)
     const user = userList.find((u) => u.email === email && u.password === password)
 
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
+    // ✅ Successful login response
     return NextResponse.json({
       success: true,
       user: {
@@ -55,6 +59,7 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
+    console.error("Login error:", error)
     return NextResponse.json({ error: "Login failed" }, { status: 500 })
   }
 }

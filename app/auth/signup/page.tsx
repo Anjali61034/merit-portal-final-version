@@ -24,7 +24,7 @@ export default function SignupPage() {
     rollNo: "",
     course: "",
     year: "",
-    department: "", // ✅ added department
+    department: "", // ✅ for teacher
   })
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -52,11 +52,10 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      // ✅ Save user info to localStorage for login
       const userData = {
         email: formData.email,
         name: formData.name,
-        password: formData.password, // ✅ needed for login
+        password: formData.password,
         role: role,
         ...(role === "student" && {
           rollNo: formData.rollNo,
@@ -68,17 +67,28 @@ export default function SignupPage() {
         }),
       }
 
-      localStorage.setItem("user", JSON.stringify(userData))
-      setSuccess("Signup successful! Redirecting...")
+      // ✅ Save user in backend (shared userStorage)
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData),
+      })
 
-      setTimeout(() => {
-        if (role === "student") {
-          router.push("/student/dashboard")
-        } else {
-          router.push("/teacher/dashboard")
-        }
-      }, 1000)
+      const data = await res.json()
+
+      if (res.ok) {
+        // ✅ Also save locally for quick access
+        localStorage.setItem("user", JSON.stringify(data.user))
+        setSuccess("Signup successful! Redirecting...")
+
+        setTimeout(() => {
+          router.push(role === "student" ? "/student/dashboard" : "/teacher/dashboard")
+        }, 1000)
+      } else {
+        setError(data.error || "Signup failed.")
+      }
     } catch (err) {
+      console.error("Signup error:", err)
       setError("Signup failed. Please try again.")
     } finally {
       setIsLoading(false)
@@ -88,7 +98,10 @@ export default function SignupPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <div className="w-full max-w-md">
-        <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition"
+        >
           <ArrowLeft size={18} />
           Back to Home
         </Link>
@@ -222,16 +235,27 @@ export default function SignupPage() {
                 />
               </div>
 
-              {error && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
-              {success && <p className="text-green-600 text-sm bg-green-50 p-3 rounded-lg">{success}</p>}
+              {error && (
+                <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</p>
+              )}
+              {success && (
+                <p className="text-green-600 text-sm bg-green-50 p-3 rounded-lg">{success}</p>
+              )}
 
-              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                disabled={isLoading}
+              >
                 {isLoading ? "Creating account..." : "Create Account"}
               </Button>
 
               <p className="text-center text-sm text-gray-600">
                 Already have an account?{" "}
-                <Link href={`/auth/login?role=${role}`} className="text-blue-600 hover:text-blue-700 font-semibold">
+                <Link
+                  href={`/auth/login?role=${role}`}
+                  className="text-blue-600 hover:text-blue-700 font-semibold"
+                >
                   Login here
                 </Link>
               </p>
