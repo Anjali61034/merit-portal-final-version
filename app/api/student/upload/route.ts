@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     await writeFile(filePath, buffer)
 
     // ✅ Call your deployed Render OCR service instead of local Python
-    const ocrResponse = await fetch("https://web-production-dc110.up.railway.app/", {
+    const ocrResponse = await fetch("https://web-production-dc110.up.railway.app/extract", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
