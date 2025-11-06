@@ -8,9 +8,8 @@ import SubmittedDocuments from "@/components/student/submitted-documents"
 
 export default function StudentDashboard() {
   const [user, setUser] = useState<any>(null)
-  const [documents, setDocuments] = useState([])
+  const [documents, setDocuments] = useState<any[]>([])
   const [totalPoints, setTotalPoints] = useState(0)
-  const [showUploadForm, setShowUploadForm] = useState(false)
 
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -97,7 +96,30 @@ export default function StudentDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <SubmittedDocuments documents={documents} />
+            {documents.length === 0 ? (
+              <p className="text-gray-500">No documents uploaded yet.</p>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {documents.map((doc) => (
+                  <Card key={doc.id} className="border border-gray-200 shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="text-sm font-semibold">{doc.fileName}</CardTitle>
+                      <CardDescription className="capitalize">{doc.type}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p><strong>Points:</strong> {doc.points}</p>
+                      {doc.fileUrl && (
+                        <img
+                          src={doc.fileUrl}
+                          alt={doc.fileName}
+                          className="rounded-lg border mt-2 w-full max-h-64 object-contain"
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
