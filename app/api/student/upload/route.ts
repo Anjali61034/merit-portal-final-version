@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const filePath = path.join(os.tmpdir(), file.name)
     await writeFile(filePath, buffer)
 
-    // ✅ Call your deployed Render OCR service instead of local Python
+    // ✅ Call your deployed OCR service (Render)
     const ocrResponse = await fetch("https://web-production-dc110.up.railway.app/extract", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -47,22 +47,21 @@ export async function POST(req: Request) {
 
     // ✅ Save document in memory (temporary DB)
     documentStorage.push({
-  id: Date.now().toString(),
-  type: docType,
-  fileName: file.name,
-  extractedData: result,
-  points,
-  uploadedAt: new Date().toISOString(),
-  fileUrl: `data:image/png;base64,${buffer.toString("base64")}`, // ✅ store previewable image
-  ...(userInfo && {
-    uploadedBy: userInfo.id,
-    studentName: userInfo.name,
-    rollNo: userInfo.rollNo,
-    course: userInfo.course,
-    year: userInfo.year,
-  }),
-});
-
+      id: Date.now().toString(),
+      type: docType,
+      fileName: file.name,
+      extractedData: result,
+      points,
+      uploadedAt: new Date().toISOString(),
+      fileUrl: `data:image/png;base64,${buffer.toString("base64")}`, // previewable image
+      ...(userInfo && {
+        uploadedBy: userInfo.id, // ✅ teacher view uses this
+        studentName: userInfo.name,
+        rollNo: userInfo.rollNo,
+        course: userInfo.course,
+        year: userInfo.year,
+      }),
+    })
 
     return NextResponse.json({ ...result, points })
   } catch (err) {

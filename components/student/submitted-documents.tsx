@@ -1,107 +1,96 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Trash2 } from "lucide-react"
+import { useEffect, useState } from "react"
+import { X } from "lucide-react"
 
-interface Document {
-  id: string
-  type: string
-  fileName: string
-  extractedData: any
-  points: number
-  uploadedAt: string
+interface StudentSubmissionModalProps {
+  isOpen: boolean
+  onClose: () => void
+  student: any
 }
 
-export default function SubmittedDocuments({ documents }: { documents: Document[] }) {
-  const handleDelete = async (id: string) => {
+export default function StudentSubmissionModal({ isOpen, onClose, student }: StudentSubmissionModalProps) {
+  const [documents, setDocuments] = useState<any[]>([])
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (student?.id && isOpen) fetchDocuments()
+  }, [student, isOpen])
+
+  const fetchDocuments = async () => {
     try {
-      await fetch(`/api/student/documents?id=${id}`, { method: "DELETE" })
-      window.location.reload() // or better: re-fetch documents from parent
+      // ✅ Now sends both studentId and rollNo for matching
+      const res = await fetch(`/api/teacher/student-documents?studentId=${student.id}&rollNo=${student.rollNo}`)
+      const data = await res.json()
+      setDocuments(data.documents || [])
     } catch (err) {
-      console.error("Error deleting document:", err)
+      console.error("Error fetching student documents:", err)
     }
   }
 
-  if (documents.length === 0) {
-    return (
-      <p className="text-center text-gray-500 py-8">
-        No documents uploaded yet. Start by uploading your marksheet or certificates.
-      </p>
-    )
-  }
+  if (!isOpen) return null
 
   return (
-    <div className="space-y-4">
-      {documents.map((doc) => (
-        <Card key={doc.id}>
-          <CardContent className="pt-4">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="font-semibold text-gray-900">{doc.fileName}</h3>
-                  <Badge variant="outline" className="capitalize">
-                    {doc.type}
-                  </Badge>
-                </div>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg shadow-lg p-6 max-w-lg w-full relative">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-600 hover:text-gray-900">
+          <X className="w-5 h-5" />
+        </button>
 
-               <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
-  {doc.type === "marksheet" && doc.extractedData.cgpa && (
-    <div>
-      <p className="text-gray-600">CGPA</p>
-      <p className="font-semibold">{doc.extractedData.cgpa}</p>
-      <p className="text-gray-600 mt-1">Sgpas</p>
-      <ul className="list-disc ml-4">
-        {doc.extractedData.sgpas?.map((sgpa: string, idx: number) => (
-          <li key={idx}>{sgpa}</li>
-        ))}
-      </ul>
-    </div>
-  )}
+        <h2 className="text-xl font-bold mb-2">{student.name}</h2>
+        <p className="text-sm text-gray-600 mb-4">
+          Roll No: {student.rollNo} | Course: {student.course}
+        </p>
 
-  {doc.type === "certificate" && doc.extractedData.category && (
-    <>
-      <div>
-        <p className="text-gray-600">Category</p>
-        <p className="font-semibold">{doc.extractedData.category}</p>
-      </div>
-      <div>
-        <p className="text-gray-600">Certificate Type</p>
-        <p className="font-semibold">{doc.extractedData.cert_type}</p>
-      </div>
-      <div>
-        <p className="text-gray-600">Rank</p>
-        <p className="font-semibold">{doc.extractedData.rank || "-"}</p>
-      </div>
-      <div>
-        <p className="text-gray-600">Leadership Role</p>
-        <p className="font-semibold">{doc.extractedData.is_lead ? "Yes" : "No"}</p>
-      </div>
-    </>
-  )}
-</div>
+        <div className="bg-blue-50 p-4 rounded-lg mb-4">
+          <p className="text-sm text-gray-600">Total Merit Points</p>
+          <p className="text-4xl font-bold text-blue-600">{student.totalPoints}</p>
+        </div>
 
-
-                <div className="mt-3 pt-3 border-t flex justify-between items-center">
-                  <span className="text-sm text-gray-600">
-                    Points: <span className="font-semibold text-blue-600">{doc.points}</span>
-                  </span>
-                  <span className="text-xs text-gray-500">{new Date(doc.uploadedAt).toLocaleDateString()}</span>
-                </div>
+        <h3 className="text-lg font-semibold mb-2">Submitted Documents</h3>
+        <div className="space-y-2 max-h-60 overflow-y-auto">
+          {documents.length === 0 ? (
+            <p className="text-gray-500">No documents submitted yet.</p>
+          ) : (
+            documents.map((doc) => (
+              <div key={doc.id} className="flex justify-between items-center border p-2 rounded">
+                <span
+                  className="text-blue-600 cursor-pointer hover:underline"
+                  onClick={() => setPreviewImage(doc.fileUrl)}
+                >
+                  {doc.fileName}
+                </span>
+                <span className="text-sm text-gray-600 capitalize">{doc.type}</span>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-red-500 hover:bg-red-50"
-                onClick={() => handleDelete(doc.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            ))
+          )}
+        </div>
+
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+
+      {previewImage && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <button
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-4 right-4 bg-white/90 p-2 rounded-full hover:bg-white transition"
+          >
+            <X className="w-5 h-5 text-gray-800" />
+          </button>
+          <img
+            src={previewImage}
+            alt="Preview"
+            className="max-w-[90%] max-h-[90%] rounded-lg shadow-lg"
+          />
+        </div>
+      )}
     </div>
   )
 }

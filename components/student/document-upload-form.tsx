@@ -40,11 +40,11 @@ export default function DocumentUploadForm({ onUploadSuccess }: DocumentUploadFo
       formData.append("file", file)
       formData.append("docType", documentType)
 
-      // ✅ Add student info (from localStorage)
-       const user = JSON.parse(localStorage.getItem("user") || "{}")
-       formData.append("userInfo", JSON.stringify(user))
+      // ✅ Add student info from localStorage
+      const user = JSON.parse(localStorage.getItem("user") || "{}")
+      formData.append("userInfo", JSON.stringify(user))
 
-      const res = await fetch("/api/student/upload", {
+      const res = await fetch("/api/student/documents", {
         method: "POST",
         body: formData,
       })
@@ -54,7 +54,7 @@ export default function DocumentUploadForm({ onUploadSuccess }: DocumentUploadFo
       if (res.ok) {
         console.log("[v0] Upload successful:", data)
         const points = data.points ?? data.document?.points ?? 0
-setSuccess(`Document uploaded successfully! Points: ${points}`)
+        setSuccess(`Document uploaded successfully! Points: ${points}`)
 
         setFile(null)
         setDocumentType("marksheet")
@@ -91,7 +91,6 @@ setSuccess(`Document uploaded successfully! Points: ${points}`)
     if (droppedFiles.length > 0) {
       const droppedFile = droppedFiles[0]
 
-      // Validate file type
       const validMimes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"]
       if (!validMimes.includes(droppedFile.type)) {
         setError("Invalid file type. Please upload PDF, JPG, or PNG")
@@ -132,8 +131,8 @@ setSuccess(`Document uploaded successfully! Points: ${points}`)
             isDragging
               ? "border-blue-500 bg-blue-50"
               : file
-                ? "border-green-500 bg-green-50"
-                : "border-gray-300 bg-white hover:border-gray-400"
+              ? "border-green-500 bg-green-50"
+              : "border-gray-300 bg-white hover:border-gray-400"
           }`}
         >
           <input

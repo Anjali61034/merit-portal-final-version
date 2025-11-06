@@ -1,2 +1,6 @@
 // lib/storage.ts
-export const documentStorage: any[] = []
+if (!(global as any).documentStorage) {
+  (global as any).documentStorage = []
+}
+
+export const documentStorage: any[] = (global as any).documentStorage
