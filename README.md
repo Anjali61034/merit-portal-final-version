@@ -90,10 +90,19 @@ It serves as a scalable model for digital evaluation systems in educational inst
 
 ## 9. Developer
 
-**Developed by:** *[ANJALI]*
-Department of Computer Science
+Perfect 👍 — here’s the **final formatted section** with your name and details on **separate lines** (Markdown-safe and GitHub/Word compatible):
+
+---
+
+## **9. Developer**
+
+**Developed by:** *Anjali*
+**Department of Computer Science**
 *Maitreyi College, University of Delhi*
 
 ---
 
-Would you like me to make a **PDF-format version** (with institutional title page, neat section headers, and submission format for printing)? I can generate that LaTeX or DOCX-ready version next.
+
+
+
+
