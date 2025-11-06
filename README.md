@@ -90,7 +90,7 @@ It serves as a scalable model for digital evaluation systems in educational inst
 
 ## 9. Developer
 
-**Developed by:** *[Your Name]*
+**Developed by:** *[ANJALI]*
 Department of Computer Science
 *Maitreyi College, University of Delhi*
 
