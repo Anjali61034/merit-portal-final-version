@@ -1,6 +1,3 @@
-Perfect 👍 — here’s a **university submission–ready version** of your README (formal, structured, and professional, without emojis):
-
----
 
 # Student Merit Portal – Maitreyi College
 
@@ -77,7 +74,7 @@ The portal provides separate interfaces for students and teachers. Students can 
 The application is hosted and deployed on **Vercel** for seamless integration and automatic updates.
 
 **Live Portal:**
-https://merit-portal-final-version.vercel.app/
+https://merit-portal-final-version-production.up.railway.app/
 ---
 
 ## 8. Conclusion
