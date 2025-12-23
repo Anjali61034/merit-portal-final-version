@@ -10,52 +10,58 @@ export async function POST(req: Request) {
     const file = data.get("file") as File
     const docType = (data.get("docType") as string)?.toLowerCase() || "marksheet"
 
-    // ✅ Extract user info if sent from frontend
-    const userInfo = data.get("userInfo") ? JSON.parse(data.get("userInfo") as string) : null
+    const userInfo = data.get("userInfo")
+      ? JSON.parse(data.get("userInfo") as string)
+      : null
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
-    // ✅ Save uploaded file temporarily
+    // ---------- Save file locally ----------
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
     const filePath = path.join(os.tmpdir(), file.name)
     await writeFile(filePath, buffer)
 
-    // ✅ Call your deployed OCR service (Render)
-    const ocrResponse = await fetch("https://web-production-dc110.up.railway.app/extract", {
+    // ---------- SEND TO FASTAPI (SOURCE OF TRUTH) ----------
+    const ocrForm = new FormData()
+    ocrForm.append("file", new Blob([buffer]), file.name)
+    ocrForm.append("doc_type", docType)
+    ocrForm.append("stream", "Sciences")
+
+    const ocrRes = await fetch(process.env.OCR_API_URL!, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        imageBase64: buffer.toString("base64"),
-        docType,
-      }),
+      body: ocrForm,
     })
 
-    if (!ocrResponse.ok) {
-      console.error("OCR service failed:", await ocrResponse.text())
-      return NextResponse.json({ error: "OCR service failed" }, { status: 500 })
+    if (!ocrRes.ok) {
+      throw new Error("OCR service failed")
     }
 
-    const result = await ocrResponse.json()
-    console.log("PARSED OCR RESULT (Render):", result)
+    const ocrData = await ocrRes.json()
 
-    // ✅ Ensure valid points
-    const points =
-      result && typeof result.points === "number" && result.points > 0 ? result.points : 0
+    // ✅ TAKE VALUES DIRECTLY FROM PYTHON
+    const extractedData = ocrData
+    const points = ocrData.points || 0
 
-    // ✅ Save document in memory (temporary DB)
+    // ---------- FILE PREVIEW (PDF + IMAGE) ----------
+    const isPdf = file.type === "application/pdf"
+    const fileUrl = isPdf
+      ? `data:application/pdf;base64,${buffer.toString("base64")}`
+      : `data:image/png;base64,${buffer.toString("base64")}`
+
+    // ---------- STORE ----------
     documentStorage.push({
       id: Date.now().toString(),
       type: docType,
       fileName: file.name,
-      extractedData: result,
+      extractedData,
       points,
       uploadedAt: new Date().toISOString(),
-      fileUrl: `data:image/png;base64,${buffer.toString("base64")}`, // previewable image
+      fileUrl,
       ...(userInfo && {
-        uploadedBy: userInfo.id, // ✅ teacher view uses this
+        uploadedBy: userInfo.id,
         studentName: userInfo.name,
         rollNo: userInfo.rollNo,
         course: userInfo.course,
@@ -63,7 +69,8 @@ export async function POST(req: Request) {
       }),
     })
 
-    return NextResponse.json({ ...result, points })
+    return NextResponse.json({ extractedData, points })
+
   } catch (err) {
     console.error("Upload Error:", err)
     return NextResponse.json({ error: "Server error during upload" }, { status: 500 })
