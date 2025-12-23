@@ -6,6 +6,10 @@ import { documentStorage } from "@/lib/storage"
 
 export async function POST(req: Request) {
   try {
+    // 🔥 1. WAKE UP RENDER (VERY IMPORTANT)
+    await fetch(process.env.OCR_API_URL!.replace("/ocr", ""), {
+      cache: "no-store",
+    })
     const data = await req.formData()
     const file = data.get("file") as File
     const docType = (data.get("docType") as string)?.toLowerCase() || "marksheet"
