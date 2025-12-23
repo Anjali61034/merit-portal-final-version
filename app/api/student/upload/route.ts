@@ -35,9 +35,13 @@ export async function POST(req: Request) {
       body: ocrForm,
     })
 
-    if (!ocrRes.ok) {
-      throw new Error("OCR service failed")
-    }
+   if (!ocrRes.ok) {
+  const text = await ocrRes.text()
+  console.error("OCR ERROR STATUS:", ocrRes.status)
+  console.error("OCR ERROR BODY:", text)
+  throw new Error("OCR service failed")
+}
+
 
     const ocrData = await ocrRes.json()
 
