@@ -10,6 +10,25 @@ def normalize_text(img_text: str) -> str:
     t = t.replace("l", "I")
     return t
 
+
+
+def apply_common_fixes(text: str) -> str:
+    COMMON_FIXES = {
+        "piast": "first",
+        "frist": "first",
+        "fi rst": "first",
+        "internationa!": "international",
+        "intemationai": "international",
+        "1 st": "1st",
+        "voiunteer":"volunteer",
+        "iiorld": "world",
+        "attendifs": "attending",
+    }
+    t = text.lower()
+    for wrong, right in COMMON_FIXES.items():
+        t = t.replace(wrong, right)
+    return t
+
 # ---------- Marksheets ----------
 def extract_sgpa_cgpas(text: str):
     pattern = r'([1IVX]+)[\s\.\)\-:]*\s*\d+\s+\d+\s+([\d.]+)\s*([\d.]+)?\s*(PASSED|FAILED|Pass|Fail)?'
@@ -49,11 +68,11 @@ def cgpa_points(cgpa: float, stream: str) -> float:
 
 # ---------- Certificates ----------
 CATEGORY_KEYWORDS = {
-    "Industry Experience": ["intern", "internship", "industrial", "industry", "placement", "training"],
+    "Industry Experience": ["intern", "internship", "industrial", "industry", "placement", "trainee"],
     "National Cadet Corps": ["ncc", "national cadet", "cadet corps"],
     "Sports": ["sport", "tournament", "match", "football", "cricket", "athletics", "badminton"],
     "Outreach Activities": ["outreach", "community", "volunteer", "social service", "blood donation", "drive"],
-    "Academic Engagement and Research": ["research", "paper", "presentation", "conference", "seminar", "workshop", "project"],
+    "Academic Engagement and Research": ["research", "paper", "seminar", "conference", "workshop", "online course", "course", "training","international","webinar"],
     "Extra-Curricular Activities": ["cultural", "dance", "music", "debate", "drama", "competition", "club", "talent"],
 }
 CATEGORY_ORDER = [
@@ -64,6 +83,9 @@ CATEGORY_ORDER = [
     "Academic Engagement and Research",
     "Extra-Curricular Activities",
 ]
+ORGANIZING_WORDS = [
+    "organizing committee", "organizing", "volunteer",
+]
 
 def detect_certificate_type_rank_lead(event_text: str) -> Tuple[str, Optional[str], bool]:
     t = event_text.lower()
@@ -72,12 +94,13 @@ def detect_certificate_type_rank_lead(event_text: str) -> Tuple[str, Optional[st
 
     # Detect leadership role
     is_lead = any(w in t for w in [
-        "captain", "president", "organizer", "coordinator", "leadership", "head", "incharge"
+        "captain", "organizer", "leadership", "head", "sub head", "sub-head", "president",
+    "vice president", "vice-president"
     ])
 
     # Detect participation
-    participation_words = ["participation", "participated", "participating",
-                           "completed", "completion", "participate"]
+    participation_words = ["participation", "participated", "participating","contribution","contributed","contributing","member","member of","take part","took part",
+                           "completed", "completion", "participate","part","attending","attended"]
     if any(w in t for w in participation_words):
         return "Participation", None, is_lead
 
@@ -91,11 +114,11 @@ def detect_certificate_type_rank_lead(event_text: str) -> Tuple[str, Optional[st
 
     # Detect rank
     rank = None
-    if re.search(r'\b(1st|first|winner|gold)\b', t):
+    if re.search(r'\b(1st rank|first|first position|winner|gold|1st)\b', t):
         rank = "1"
-    elif re.search(r'\b(2nd|second|runner|silver)\b', t):
+    elif re.search(r'\b(2nd Rank|second|runner|silver)\b', t):
         rank = "2"
-    elif re.search(r'\b(3rd|third|bronze)\b', t):
+    elif re.search(r'\b(3rd Rank|third|bronze)\b', t):
         rank = "3"
     else:
         m = re.search(r'(?:position|rank)[:\s]*([0-9]+|first|second|third|1st|2nd|3rd)', t)
@@ -108,11 +131,23 @@ def detect_certificate_type_rank_lead(event_text: str) -> Tuple[str, Optional[st
 
 def detect_certificate_category(text: str) -> Optional[str]:
     low = text.lower()
+
+    # 🚫 Organizing activities should NEVER be AER
+    if any(w in low for w in [
+        "organizing committee", "organizing", "organiser",
+        "coordinator",
+    ]):
+        return "Extra-Curricular Activities"
+
+    # Normal priority order
     for cat in CATEGORY_ORDER:
         for kw in CATEGORY_KEYWORDS[cat]:
-            if kw in low:
+            if re.search(rf'\b{re.escape(kw)}\b', low):
                 return cat
-    return None
+
+
+    return "Extra-Curricular Activities"
+
 
 def certificate_points_for_category(cert_type: str, rank: Optional[str], is_lead: bool, category: str, cert_text_low: str) -> float:
     if category == "Industry Experience":
@@ -149,6 +184,8 @@ except FileNotFoundError:
 
 text = pytesseract.image_to_string(img)
 clean_text = normalize_text(text)
+clean_text = apply_common_fixes(clean_text)
+
 
 # ---------- Marksheets ----------
 if doc_type == "marksheet":
