@@ -174,6 +174,7 @@ export default function StudentDashboard() {
                           </>
                         ) : (
                           <>
+                            <p><strong>Certificate Type:</strong>{" "}{doc.extractedData.cert_type ?? "—"}</p>
                             <p><strong>Category:</strong> {doc.extractedData.category ?? "—"}</p>
                             <p><strong>Rank:</strong> {doc.extractedData.rank ?? "—"}</p>
                             <p><strong>Leadership:</strong> {doc.extractedData.is_lead ? "Yes" : "No"}</p>
